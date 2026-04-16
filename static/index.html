@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AutoFix AI — Code Tester & Fixer</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>&#x1f527; AutoFix AI</h1>
+            <p class="subtitle">Upload your code file — AI detects bugs, security issues & style problems, then fixes them automatically.</p>
+            <div class="lang-badges">
+                <span class="lang-badge">Python</span>
+                <span class="lang-badge">JavaScript</span>
+                <span class="lang-badge">Java</span>
+                <span class="lang-badge">C/C++</span>
+                <span class="lang-badge">Go</span>
+            </div>
+        </header>
+
+        <!-- Upload Section -->
+        <div id="upload-section">
+            <div id="drop-zone" class="drop-zone">
+                <div class="drop-zone-content">
+                    <div class="upload-icon">&#128194;</div>
+                    <p>Drag & drop your code file here</p>
+                    <p class="or-text">or</p>
+                    <label class="file-btn">
+                        Browse Files
+                        <input type="file" id="file-input" accept=".py,.js,.jsx,.ts,.tsx,.java,.cpp,.cc,.cxx,.c,.h,.hpp,.go" hidden>
+                    </label>
+                    <p class="hint">Max 500KB &bull; .py .js .ts .java .cpp .c .go</p>
+                </div>
+            </div>
+            <div id="file-info" class="file-info hidden">
+                <span id="file-name"></span>
+                <button id="remove-file" class="remove-btn">&times;</button>
+            </div>
+            <button id="analyze-btn" class="analyze-btn hidden">Analyze & Fix</button>
+        </div>
+
+        <!-- Loading with Progress Steps -->
+        <div id="loading" class="loading hidden">
+            <div class="progress-steps">
+                <div class="step" id="step-bugs">
+                    <div class="step-icon">&#9711;</div>
+                    <div class="step-text">Scanning for bugs</div>
+                </div>
+                <div class="step" id="step-security">
+                    <div class="step-icon">&#9711;</div>
+                    <div class="step-text">Checking security</div>
+                </div>
+                <div class="step" id="step-style">
+                    <div class="step-icon">&#9711;</div>
+                    <div class="step-text">Reviewing code style</div>
+                </div>
+                <div class="step" id="step-fix">
+                    <div class="step-icon">&#9711;</div>
+                    <div class="step-text">Generating fixed code</div>
+                </div>
+            </div>
+            <div class="progress-bar-container">
+                <div class="progress-bar" id="progress-bar"></div>
+            </div>
+            <p class="hint" id="progress-detail">Preparing analysis...</p>
+        </div>
+
+        <!-- Results Section -->
+        <div id="results" class="results hidden">
+
+            <!-- Grade + Summary Row -->
+            <div class="grade-summary-row">
+                <!-- Grade Ring -->
+                <div class="grade-container">
+                    <svg class="grade-ring" viewBox="0 0 120 120">
+                        <circle class="grade-ring-bg" cx="60" cy="60" r="52" />
+                        <circle class="grade-ring-fill" id="grade-ring-fill" cx="60" cy="60" r="52"
+                            stroke-dasharray="326.73" stroke-dashoffset="326.73" />
+                    </svg>
+                    <div class="grade-text">
+                        <div class="grade-letter" id="grade-letter">A</div>
+                        <div class="grade-score" id="grade-score">100</div>
+                    </div>
+                </div>
+
+                <!-- Summary Cards -->
+                <div class="summary-cards">
+                    <div class="card card-bugs">
+                        <div class="card-count" id="bug-count">0</div>
+                        <div class="card-label">Bugs</div>
+                    </div>
+                    <div class="card card-security">
+                        <div class="card-count" id="security-count">0</div>
+                        <div class="card-label">Security</div>
+                    </div>
+                    <div class="card card-style">
+                        <div class="card-count" id="style-count">0</div>
+                        <div class="card-label">Style</div>
+                    </div>
+                    <div class="card card-total">
+                        <div class="card-count" id="total-count">0</div>
+                        <div class="card-label">Total</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tabs -->
+            <div class="tabs">
+                <button class="tab active" data-tab="issues">Issues Found</button>
+                <button class="tab" data-tab="tests">Test Cases</button>
+                <button class="tab" data-tab="diff">Diff View</button>
+                <button class="tab" data-tab="fixed">Fixed Code</button>
+                <button class="tab" data-tab="original">Original Code</button>
+            </div>
+
+            <!-- Issues Tab -->
+            <div id="tab-issues" class="tab-content active">
+                <div class="filter-bar">
+                    <button class="filter active" data-filter="all">All</button>
+                    <button class="filter" data-filter="bug">Bugs</button>
+                    <button class="filter" data-filter="security">Security</button>
+                    <button class="filter" data-filter="style">Style</button>
+                </div>
+                <div id="issues-list" class="issues-list"></div>
+            </div>
+
+            <!-- Test Cases Tab -->
+            <div id="tab-tests" class="tab-content">
+                <div id="test-loading" class="test-loading hidden">
+                    <div class="spinner-small"></div>
+                    <span>Generating & running test cases...</span>
+                </div>
+                <div id="test-prompt" class="test-prompt">
+                    <button id="run-tests-btn" class="run-tests-btn">Generate & Run Test Cases</button>
+                    <p class="hint">AI will generate test cases for every function and execute them (Python only)</p>
+                </div>
+                <div id="test-results" class="hidden">
+                    <!-- Test Summary Bar -->
+                    <div class="test-summary" id="test-summary"></div>
+                    <!-- Test Table -->
+                    <div class="test-table-wrap">
+                        <table class="test-table" id="test-table">
+                            <thead>
+                                <tr>
+                                    <th>Status</th>
+                                    <th>Function</th>
+                                    <th>Test</th>
+                                    <th>Expected</th>
+                                    <th>Actual</th>
+                                    <th>Category</th>
+                                </tr>
+                            </thead>
+                            <tbody id="test-table-body"></tbody>
+                        </table>
+                    </div>
+                    <!-- Suggestions -->
+                    <div id="test-suggestions" class="test-suggestions"></div>
+                </div>
+            </div>
+
+            <!-- Diff Tab -->
+            <div id="tab-diff" class="tab-content">
+                <div class="diff-legend">
+                    <span class="diff-legend-item removed">&#x25A0; Removed</span>
+                    <span class="diff-legend-item added">&#x25A0; Added</span>
+                    <span class="diff-legend-item unchanged">&#x25A0; Unchanged</span>
+                </div>
+                <div id="diff-view" class="diff-view"></div>
+            </div>
+
+            <!-- Fixed Code Tab -->
+            <div id="tab-fixed" class="tab-content">
+                <div class="code-header">
+                    <span id="explanation"></span>
+                    <div class="code-actions">
+                        <button id="copy-btn" class="action-btn">Copy</button>
+                        <button id="download-btn" class="action-btn">Download</button>
+                        <button id="pdf-btn" class="action-btn pdf-btn">Download PDF Report</button>
+                    </div>
+                </div>
+                <pre><code id="fixed-code"></code></pre>
+            </div>
+
+            <!-- Original Code Tab -->
+            <div id="tab-original" class="tab-content">
+                <pre><code id="original-code"></code></pre>
+            </div>
+
+            <!-- Start Over -->
+            <button id="reset-btn" class="reset-btn">Analyze Another File</button>
+        </div>
+
+        <!-- Error -->
+        <div id="error" class="error hidden">
+            <p id="error-message"></p>
+            <button id="error-dismiss" class="action-btn">Try Again</button>
+        </div>
+    </div>
+
+    <script src="/static/script.js"></script>
+</body>
+</html>
